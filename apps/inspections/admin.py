@@ -21,9 +21,16 @@ class InspectionFieldInline(admin.TabularInline):
 
 @admin.register(InspectionTemplate)
 class InspectionTemplateAdmin(admin.ModelAdmin):
-    list_display = ("name", "is_active", "created_at")
-    list_filter = ("is_active",)
-    search_fields = ("name",)
+    """
+    `institute` shown/filterable now that each template belongs to a
+    specific institute/NGO (created via /templates on the frontend, which
+    requires picking one). Search covers both the template's own name and
+    its institute's name.
+    """
+    list_display = ("name", "institute", "is_active", "created_at")
+    list_filter = ("is_active", "institute")
+    search_fields = ("name", "institute__name")
+    autocomplete_fields = ["institute"]
     inlines = [InspectionFieldInline]
 
 

@@ -23,11 +23,17 @@ class InspectionFieldSerializer(serializers.ModelSerializer):
 
 
 class InspectionTemplateSerializer(serializers.ModelSerializer):
+    """
+    `institute` is now writable — a template belongs to a specific
+    institute/NGO, picked via a searchable dropdown on template creation.
+    `institute_name` is a convenience read field for list/detail display.
+    """
     fields = InspectionFieldSerializer(many=True, read_only=True)
+    institute_name = serializers.CharField(source="institute.name", read_only=True, default=None)
 
     class Meta:
         model = InspectionTemplate
-        fields = ["id", "name", "description", "is_active", "fields"]
+        fields = ["id", "institute", "institute_name", "name", "description", "is_active", "fields"]
 
 
 class EvidenceSerializer(serializers.ModelSerializer):

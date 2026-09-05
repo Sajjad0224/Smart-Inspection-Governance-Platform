@@ -12,6 +12,14 @@ simple... Later you can make this an optimization/AI system"):
     5. Check project priority            -> handled by select_surprise_institute()
     6. Select best inspector             -> select_inspector_for_institute()
     7. Create assignment                 -> auto_assign()
+
+NOTE (template-per-institute): InspectionTemplate now carries an
+`institute` FK (each checklist is built for a specific institute/NGO via
+the "+ New Template" flow on /templates). `_template_for_institute()` below
+picks that institute's own active template first, falling back to any
+active "general" template (institute__isnull=True) so older/shared
+templates keep working. If neither exists, callers raise a clear error
+telling the official to create one for that institute.
 """
 import random
 import uuid
@@ -38,6 +46,18 @@ WORKLOAD_SOFT_CAP = 5
 # currently treated as being as undesirable as ~15 km of extra travel.
 WORKLOAD_PENALTY_KM_EQUIVALENT = 15
 ANTI_COLLUSION_DAYS = 180
+
+
+def _template_for_institute(institute: Institute):
+    """
+    Picks the active checklist to use for `institute`: prefer a template
+    built specifically for it, fall back to a shared/general template
+    (institute is null) if one exists. Returns None if neither exists.
+    """
+    return (
+        InspectionTemplate.objects.filter(is_active=True, institute=institute).first()
+        or InspectionTemplate.objects.filter(is_active=True, institute__isnull=True).first()
+    )
 
 
 def _eligible_officers():
@@ -151,11 +171,18 @@ def auto_assign(institute: Institute, template: InspectionTemplate = None, due_i
     Creates and returns an InspectionAssignment for `institute`, choosing the
     best available officer. Raises ValueError if there's no eligible officer
     or no active template to assign.
+
+    `template` defaults to this institute's own active checklist (falling
+    back to a shared/general template) via `_template_for_institute()` —
+    templates are no longer picked from "whatever is first" globally.
     """
     if template is None:
-        template = InspectionTemplate.objects.filter(is_active=True).first()
+        template = _template_for_institute(institute)
     if template is None:
-        raise ValueError("No active inspection template exists — create one in /admin/ first.")
+        raise ValueError(
+            f"No active inspection template exists for '{institute.name}' — "
+            "create one for this institute on the Inspection Templates page first."
+        )
 
     officer, breakdown = select_inspector_for_institute(institute)
     if officer is None:
@@ -223,19 +250,28 @@ def notify_assignment_created(assignment):
 
 
 def run_auto_assignment(radius_km=None, due_in_hours=None, institute_ids=None):
-    """Create random surprise assignments for all eligible priority institutes."""
-    template = InspectionTemplate.objects.filter(is_active=True).first()
+    """
+    Create random surprise assignments for all eligible priority institutes.
+
+    Each institute now looks up its own active template (or a shared/general
+    fallback) individually via `_template_for_institute()`, since templates
+    are institute-specific rather than one global "first active template".
+    An institute with no matching template is skipped (counted in
+    `skipped`), same as an institute with no eligible officer.
+    """
     institutes = _priority_institutes()
     if institute_ids:
         institutes = institutes.filter(id__in=institute_ids)
-    if template is None:
-        return {"evaluated": institutes.count(), "assigned": 0, "skipped": institutes.count(), "assignments": []}
 
     due_in_hours = due_in_hours or getattr(settings, "AUTO_ASSIGN_NOTICE_HOURS", 3)
     scheduled_at = timezone.now() + timedelta(hours=due_in_hours)
     assignments = []
     skipped = 0
     for institute in institutes:
+        template = _template_for_institute(institute)
+        if template is None:
+            skipped += 1
+            continue
         candidates = eligible_officers_for_institute(institute, scheduled_at, radius_km)
         if not candidates:
             skipped += 1

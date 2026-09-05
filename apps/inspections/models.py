@@ -11,13 +11,28 @@ from apps.registry.models import Institute
 # ---------------------------------------------------------------------------
 
 class InspectionTemplate(models.Model):
-    """A named checklist, e.g. 'Monthly Skill Centre Inspection'."""
+    """
+    A named checklist, e.g. 'Monthly Skill Centre Inspection'.
+
+    `institute` scopes this checklist to a single institute/NGO — created
+    via the "+ New Template" flow on /templates, which now requires picking
+    an institute first (searchable by name or ID). Kept nullable so a
+    template can still be a shared/general checklist usable across any
+    institute (e.g. pre-existing templates from before this field existed).
+    """
+    institute = models.ForeignKey(
+        Institute, on_delete=models.CASCADE, related_name="inspection_templates",
+        null=True, blank=True,
+        help_text="The institute/NGO this checklist was built for. Leave blank only for a shared/general template.",
+    )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+        if self.institute_id:
+            return f"{self.name} ({self.institute.name})"
         return self.name
 
 

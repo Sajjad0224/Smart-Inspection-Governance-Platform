@@ -81,7 +81,16 @@ export default function TemplateDetail() {
       <div>
         <Link to="/templates" className="text-xs text-[var(--accent)] underline">← Back to templates</Link>
         <h1 className="text-lg font-semibold text-[var(--ink)] mt-2">{template.name}</h1>
-        <p className="text-sm text-[var(--ink-soft)]">{template.description}</p>
+        <p className="text-sm text-[var(--ink-soft)]">
+          {template.institute_name ? (
+            <>Institute/NGO: <span className="font-medium text-[var(--ink)]">{template.institute_name}</span></>
+          ) : (
+            <span className="italic">General template (not tied to a specific institute)</span>
+          )}
+        </p>
+        {template.description && (
+          <p className="text-sm text-[var(--ink-soft)] mt-1">{template.description}</p>
+        )}
       </div>
 
       <form onSubmit={handleSave} className="bg-white border border-[var(--line)] p-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">

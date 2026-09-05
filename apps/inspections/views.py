@@ -31,13 +31,21 @@ class InspectionTemplateViewSet(viewsets.ModelViewSet):
     Write (create/update/delete): officials only — this is the frontend
     equivalent of admin.py's InspectionTemplateAdmin, used by
     frontend/src/pages/admin/InspectionTemplates.jsx.
+
+    Supports ?institute=<id> so the template list (and the "Filter by
+    institute" dropdown on the frontend) can scope to one institute/NGO's
+    checklists. Templates are now created against a specific institute
+    (InspectionTemplate.institute) rather than being global.
     """
     serializer_class = InspectionTemplateSerializer
 
     def get_queryset(self):
-        qs = InspectionTemplate.objects.all().prefetch_related("fields")
+        qs = InspectionTemplate.objects.all().select_related("institute").prefetch_related("fields")
         if not is_official(self.request.user):
             qs = qs.filter(is_active=True)
+        institute_id = self.request.query_params.get("institute")
+        if institute_id:
+            qs = qs.filter(institute_id=institute_id)
         return qs
 
     def get_permissions(self):
