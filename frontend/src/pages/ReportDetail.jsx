@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { client } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { isOfficial } from "../constants/roles";
+import VCSessionPanel from "../components/VCSessionPanel";
 
 // Works under two routes:
 //   /institutes/:instituteId/reports/:assignmentId   (officials)
@@ -150,6 +151,7 @@ export default function ReportDetail() {
           ))}
         </ul>
       </section>
+      <VCSessionPanel instituteId={report.institute} inspectionId={assignmentId} />
 
       {report.notes && (
         <section className="bg-white border border-[var(--line)] p-4">

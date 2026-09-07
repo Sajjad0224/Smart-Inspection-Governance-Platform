@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Video, X } from "lucide-react";
 import { client, downloadBlob, initiateSurpriseVC } from "../api/client";
 import CctvPanel from "../components/CctvPanel";
+import VCSessionPanel from "../components/VCSessionPanel";
 import RiskTrendChart from "../components/RiskTrendChart";
 import useAlertsSocket from "../hooks/useAlertsSocket";
 
@@ -130,10 +131,19 @@ export default function InstituteDetail() {
     setVcAlert(null);
     try {
       const { data } = await initiateSurpriseVC(id);
-      setVcRoom(data.room_name);
+      await openVC(data.session_id, data.room_name);
     } catch (err) {
       setVcAlert({ error: err.response?.data?.detail || "Could not initiate the surprise video call." });
     }
+  }
+
+  async function openVC(sessionId, fallbackRoom) {
+    if (sessionId) {
+      const { data } = await client.post(`/consultations/sessions/${sessionId}/join/`);
+      setVcRoom(data.room_name);
+      return;
+    }
+    setVcRoom(fallbackRoom);
   }
 
   async function handleDownloadRiskPdf() {
@@ -216,7 +226,7 @@ export default function InstituteDetail() {
       {vcAlert && (
         <div role="alert" className={`flex items-center justify-between gap-4 border px-4 py-3 text-sm ${vcAlert.error ? "border-[var(--danger)] text-[var(--danger)]" : "border-[var(--warn)] bg-[var(--warn)]/10 text-[var(--ink)]"}`}>
           <span>{vcAlert.error || "A surprise video call has been initiated for this institute."}</span>
-          {!vcAlert.error && <button onClick={() => { setVcRoom(vcAlert.room_name); setVcAlert(null); }} className="shrink-0 bg-[var(--ink)] text-white px-3 py-1.5 font-medium">Join Call Now</button>}
+          {!vcAlert.error && <button onClick={() => { openVC(vcAlert.session_id, vcAlert.room_name).then(() => setVcAlert(null)).catch(() => setVcAlert({ error: "You are not an invited participant in this VC." })); }} className="shrink-0 bg-[var(--ink)] text-white px-3 py-1.5 font-medium">Join Call Now</button>}
           <button onClick={() => setVcAlert(null)} aria-label="Dismiss video call notification" className="shrink-0 text-[var(--ink-soft)]"><X size={17} /></button>
         </div>
       )}
@@ -412,6 +422,7 @@ export default function InstituteDetail() {
       </section>
 
       <CctvPanel instituteId={id} />
+      <VCSessionPanel instituteId={id} />
     </div>
   );
 }
