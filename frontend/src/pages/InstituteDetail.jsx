@@ -363,6 +363,14 @@ export default function InstituteDetail() {
         )}
 
         <div className="p-4 text-sm space-y-3">
+          {!riskLoading && risk && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-[var(--line)] pb-3">
+              <Metric label="Attendance" value={risk.features.attendance_rate == null ? "No data" : `${Math.round(risk.features.attendance_rate * 100)}%`} />
+              <Metric label="CCTV online" value={risk.features.camera_online_ratio == null ? "No cameras" : `${Math.round(risk.features.camera_online_ratio * 100)}%`} />
+              <Metric label="Inspection score" value={risk.features.latest_inspection_score == null ? "No score" : `${risk.features.latest_inspection_score}/100`} />
+              <Metric label="Inspection frequency" value={`${risk.features.inspection_frequency} total`} />
+            </div>
+          )}
           {riskLoading && <p className="text-[var(--ink-soft)]">Computing…</p>}
           {!riskLoading && risk && risk.factors.length === 0 && (
             <p className="text-[var(--ink-soft)]">No risk factors currently triggered for this institute.</p>
@@ -382,6 +390,11 @@ export default function InstituteDetail() {
               Flagged by the anomaly model (Isolation Forest) as statistically unusual compared to other institutes.
             </p>
           )}
+          {!riskLoading && risk?.surprise_inspection_recommended && (
+            <p className="text-xs text-[var(--danger)] border-t border-[var(--line)] pt-2 font-medium">
+              HIGH RISK: surprise inspection recommended. Existing active assignments are preserved to prevent duplicates.
+            </p>
+          )}
         </div>
       </section>
 
@@ -399,6 +412,15 @@ export default function InstituteDetail() {
       </section>
 
       <CctvPanel instituteId={id} />
+    </div>
+  );
+}
+
+function Metric({ label, value }) {
+  return (
+    <div className="border border-[var(--line)] px-3 py-2">
+      <div className="text-xs text-[var(--ink-soft)]">{label}</div>
+      <div className="font-medium text-[var(--ink)] mt-1">{value}</div>
     </div>
   );
 }
