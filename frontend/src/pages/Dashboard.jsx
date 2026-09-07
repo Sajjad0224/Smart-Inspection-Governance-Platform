@@ -160,6 +160,9 @@ export default function Dashboard() {
             <div className="p-4 space-y-3 text-sm">
               <Row label="Submitted" value={summary?.submitted_inspections} color="var(--ok)" />
               <Row label="Pending" value={summary?.pending_inspections} color="var(--warn)" />
+              <Row label="Under review" value={summary?.under_review_inspections} color="var(--warn)" />
+              <Row label="Approved" value={summary?.approved_inspections} color="var(--ok)" />
+              <Row label="Completed" value={summary?.completed_inspections} color="var(--ok)" />
               <Row label="Overdue" value={summary?.overdue_inspections} color="var(--danger)" />
             </div>
           </div>

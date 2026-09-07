@@ -109,6 +109,8 @@ export default function NGODashboard() {
         <StatCard label="Active projects" value={summary?.active_projects ?? "—"} />
         <StatCard label="High risk (AI)" value={summary?.high_risk_institutes ?? "—"} accent="var(--danger)" />
         <StatCard label="Inspections pending" value={summary?.pending_inspections ?? "—"} accent="var(--warn)" />
+        <StatCard label="Under review" value={summary?.under_review_inspections ?? "—"} accent="var(--warn)" />
+        <StatCard label="Completed" value={summary?.completed_inspections ?? "—"} accent="var(--ok)" />
       </div>
 
       {!loading && institutes.length === 0 ? (
